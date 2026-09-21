@@ -227,6 +227,27 @@ func TestDropHeldUsesTheRightStatus(t *testing.T) {
 	}
 }
 
+func TestSwapOffhandUsesTheRightStatus(t *testing.T) {
+	c, s := settled(t)
+	if err := c.SwapOffhand(context.Background()); err != nil {
+		t.Fatalf("SwapOffhand: %v", err)
+	}
+	waitFor(t, time.Second, "the swap-offhand packet", func() bool {
+		return s.countOf(c.v.Packets.SBPlayBlockDig) > 0
+	})
+	r := s.first(t, c.v.Packets.SBPlayBlockDig, "block_dig").Reader()
+	if got := r.VarInt(); got != protocol.DigSwapOffhand {
+		t.Errorf("block_dig status = %d, want %d", got, protocol.DigSwapOffhand)
+	}
+	x, y, z := protocol.DecodeBlockPos(r.I64())
+	if x != 0 || y != 0 || z != 0 {
+		t.Errorf("swap addressed %d,%d,%d, want ignored origin", x, y, z)
+	}
+	if got := r.I8(); got != int8(protocol.FaceBottom) {
+		t.Errorf("swap face = %d, want bottom (%d)", got, protocol.FaceBottom)
+	}
+}
+
 // Since 1.19 every dig and place carries a monotonically increasing sequence,
 // and it is per-connection so two bots do not share a counter.
 func TestBlockSequenceIsPerClientAndIncreasing(t *testing.T) {

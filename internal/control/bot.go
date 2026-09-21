@@ -66,6 +66,7 @@ type Bot interface {
 	CloseInventory() error
 	HoldItem(name string) (understudy.ItemStack, error)
 	DropHeld(ctx context.Context, all bool) error
+	SwapOffhand(ctx context.Context) error
 	EquipArmour(name string) (understudy.ItemStack, error)
 	InventoryTruncated() bool
 	CountItem(name string) int32

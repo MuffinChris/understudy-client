@@ -1908,6 +1908,35 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /offhand:
+    post:
+      operationId: offhand
+      tags: [Items]
+      summary: Presses the vanilla swap-hands key once.
+      description: |
+        Servers may intercept the input for another action, so the response only
+        confirms that the client sent it. Observe inventory or feature state to
+        verify the server's result.
+      responses:
+        "200":
+          description: Done. A POST also carries the envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400":
+          description: |
+            You asked wrongly — bad JSON, an unknown field, an unparseable
+            coordinate.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            You asked correctly and the world said no — out of reach, dead, not
+            in play, nothing to trade. Carries whatever the verb managed first.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /place:
     post:
       operationId: place

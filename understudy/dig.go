@@ -322,6 +322,17 @@ func (c *Client) DropHeld(ctx context.Context, all bool) error {
 	return nil
 }
 
+// SwapOffhand presses the vanilla swap-hands key.
+//
+// The action shares player_action with digging and dropping. Position and face
+// are ignored by the server for this status, just as they are for drops.
+func (c *Client) SwapOffhand(ctx context.Context) error {
+	if err := c.requireAlive("swap offhand"); err != nil {
+		return err
+	}
+	return c.blockDig(ctx, protocol.DigSwapOffhand, 0, 0, 0, protocol.FaceBottom)
+}
+
 // forgetDropped takes the dropped items out of this client's own view.
 //
 // The server does not echo a slot update for a drop: a vanilla client predicts

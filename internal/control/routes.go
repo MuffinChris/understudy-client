@@ -43,6 +43,7 @@ func (s *Server) routes() *http.ServeMux {
 	mux.Handle("POST /inventory/close", handle(s, s.inventoryClose))
 	mux.Handle("POST /hold", handle(s, s.hold))
 	mux.Handle("POST /drop", handle(s, s.drop))
+	mux.Handle("POST /offhand", handle(s, s.offhand))
 	mux.Handle("POST /sneak", handle(s, s.sneak))
 	mux.Handle("POST /equip", handle(s, s.equip))
 	mux.Handle("POST /interact", handle(s, s.interact))
@@ -494,6 +495,15 @@ func (s *Server) drop(ctx context.Context, in struct {
 		dropped = 0
 	}
 	return body{"item": before.Name, "dropped": dropped, "all": in.All}, nil
+}
+
+// offhand presses the vanilla swap-hands key once.
+//
+// Servers may intercept the input for another action, so the response only
+// confirms that the client sent it. Observe inventory or feature state to
+// verify the server's result.
+func (s *Server) offhand(ctx context.Context, _ struct{}) (body, error) {
+	return nil, s.bot.SwapOffhand(ctx)
 }
 
 // sneak holds sneak for a duration, since sneak_time only accrues while
