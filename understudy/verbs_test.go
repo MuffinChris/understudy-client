@@ -142,6 +142,64 @@ func TestSetHeldSlotSends(t *testing.T) {
 	})
 }
 
+func TestClickInventorySlotUsesThePlayerWindow(t *testing.T) {
+	c, s := settled(t)
+	c.inv.SetStateID(17)
+
+	if err := c.ClickInventorySlot(SlotCraftGridA + 1); err != nil {
+		t.Fatalf("ClickInventorySlot: %v", err)
+	}
+	waitFor(t, time.Second, "the inventory click", func() bool {
+		return s.countOf(c.v.Packets.SBPlayWindowClick) > 0
+	})
+
+	r := s.first(t, c.v.Packets.SBPlayWindowClick, "window click").Reader()
+	if window, state, slot := r.VarInt(), r.VarInt(), r.I16(); window != PlayerWindowID || state != 17 || slot != int16(SlotCraftGridA+1) {
+		t.Errorf("inventory click = window/state/slot %d/%d/%d, want 0/17/2",
+			window, state, slot)
+	}
+	if button, mode := r.I8(), r.VarInt(); button != 0 || mode != ClickModeNormal {
+		t.Errorf("inventory click = button/mode %d/%d, want a normal left-click", button, mode)
+	}
+}
+
+func TestClickInventorySlotRejectsOutsideThePlayerWindow(t *testing.T) {
+	c, s := settled(t)
+	for _, slot := range []int{-1, SlotOffhand + 1} {
+		if err := c.ClickInventorySlot(slot); err == nil {
+			t.Errorf("ClickInventorySlot(%d) = nil error, want an out-of-range error", slot)
+		}
+	}
+	if got := s.countOf(c.v.Packets.SBPlayWindowClick); got != 0 {
+		t.Errorf("invalid inventory clicks sent %d packets, want 0", got)
+	}
+}
+
+func TestCloseInventoryUsesThePlayerWindow(t *testing.T) {
+	c, s := settled(t)
+	if err := c.CloseInventory(); err != nil {
+		t.Fatalf("CloseInventory: %v", err)
+	}
+	waitFor(t, time.Second, "the inventory close", func() bool {
+		return s.countOf(c.v.Packets.SBPlayCloseWindow) > 0
+	})
+	window := s.first(t, c.v.Packets.SBPlayCloseWindow, "close window").Reader().VarInt()
+	if window != PlayerWindowID {
+		t.Errorf("closed window %d, want player window 0", window)
+	}
+}
+
+func TestCloseInventoryRefusesWhileAContainerIsOpen(t *testing.T) {
+	c, s := settled(t)
+	c.window.Open(4, int32(WindowGeneric9x3), "Chest")
+	if err := c.CloseInventory(); err == nil {
+		t.Fatal("CloseInventory with a container open = nil error")
+	}
+	if got := s.countOf(c.v.Packets.SBPlayCloseWindow); got != 0 {
+		t.Errorf("CloseInventory sent %d packets for the wrong window, want 0", got)
+	}
+}
+
 // Dropping rides on block_dig with a status meaning "drop" rather than
 // "break", so the status byte is the whole distinction.
 func TestDropHeldUsesTheRightStatus(t *testing.T) {

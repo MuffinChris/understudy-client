@@ -1629,6 +1629,72 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /inventory/click:
+    post:
+      operationId: inventoryClick
+      tags: [Items]
+      summary: "Left-clicks a slot in the player's own inventory window."
+      description: |
+        This is distinct from /container/click: window 0 is always present and also
+        carries the 2x2 crafting grid, which servers can turn into clickable menus.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [slot]
+              properties:
+                slot:
+                  type: integer
+                  minimum: 0
+                  maximum: 45
+      responses:
+        "200":
+          description: Done. A POST also carries the envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400":
+          description: |
+            You asked wrongly — bad JSON, an unknown field, an unparseable
+            coordinate.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            You asked correctly and the world said no — out of reach, dead, not
+            in play, nothing to trade. Carries whatever the verb managed first.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /inventory/close:
+    post:
+      operationId: inventoryClose
+      tags: [Items]
+      summary: "Closes the player's own inventory window."
+      responses:
+        "200":
+          description: Done. A POST also carries the envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400":
+          description: |
+            You asked wrongly — bad JSON, an unknown field, an unparseable
+            coordinate.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            You asked correctly and the world said no — out of reach, dead, not
+            in play, nothing to trade. Carries whatever the verb managed first.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /look:
     post:
       operationId: look

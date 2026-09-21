@@ -131,6 +131,37 @@ func (c *Client) SetHeldSlot(slot int) error {
 		protocol.NewWriter(c.v.Packets.SBPlayHeldItemSlot).I16(int16(slot)).Bytes())
 }
 
+// ClickInventorySlot left-clicks one slot in the player's own inventory
+// window. This includes the four 2x2 crafting-grid slots, which servers may
+// project into clickable menus without opening a separate container.
+func (c *Client) ClickInventorySlot(slot int) error {
+	if slot < SlotCraftOutput || slot > SlotOffhand {
+		return fmt.Errorf("understudy: inventory slot %d out of range %d-%d",
+			slot, SlotCraftOutput, SlotOffhand)
+	}
+	if err := c.requireAlive("click inventory slot"); err != nil {
+		return err
+	}
+	return c.clickSlot(slot, 0, ClickModeNormal)
+}
+
+// CloseInventory tells the server that the player closed its own inventory
+// window. Servers can use that lifecycle event to restore projections they
+// temporarily replaced with the vanilla 2x2 crafting grid.
+func (c *Client) CloseInventory() error {
+	if err := c.requireAlive("close inventory"); err != nil {
+		return err
+	}
+	if c.ContainerOpen() {
+		return fmt.Errorf("understudy: a separate container is open; close it instead")
+	}
+	if c.v.Packets.SBPlayCloseWindow == protocol.Absent {
+		return fmt.Errorf("understudy: %s has no close_window packet", c.v.Name)
+	}
+	return c.conn.WritePacket(
+		protocol.NewWriter(c.v.Packets.SBPlayCloseWindow).VarInt(PlayerWindowID).Bytes())
+}
+
 // clickSlot sends a container click.
 //
 // changedSlots is deliberately sent empty and the cursor as absent. Those

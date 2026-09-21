@@ -398,6 +398,43 @@ func TestHoldAndEquipRequireAnItem(t *testing.T) {
 	}
 }
 
+func TestInventoryClickRequiresAPlayerWindowSlot(t *testing.T) {
+	for _, body := range []string{`{}`, `{"slot":-1}`, `{"slot":46}`} {
+		code, _ := call(t, newTestServer(newStubBot()), http.MethodPost,
+			"/inventory/click", body)
+		if code != http.StatusBadRequest {
+			t.Errorf("POST /inventory/click %s = %d, want 400", body, code)
+		}
+	}
+}
+
+func TestInventoryClickClicksWindowZero(t *testing.T) {
+	bot := newStubBot()
+	code, out := call(t, newTestServer(bot), http.MethodPost,
+		"/inventory/click", `{"slot":2}`)
+	if code != http.StatusOK {
+		t.Fatalf("POST /inventory/click = %d (%v)", code, out)
+	}
+	if !bot.called("ClickInventorySlot") || bot.lastButton != 2 {
+		t.Errorf("calls/slot = %v/%d, want ClickInventorySlot/2", bot.calls, bot.lastButton)
+	}
+	if out["slot"] != float64(2) {
+		t.Errorf("response slot = %v, want 2", out["slot"])
+	}
+}
+
+func TestInventoryCloseClosesWindowZero(t *testing.T) {
+	bot := newStubBot()
+	code, out := call(t, newTestServer(bot), http.MethodPost,
+		"/inventory/close", "")
+	if code != http.StatusOK {
+		t.Fatalf("POST /inventory/close = %d (%v)", code, out)
+	}
+	if !bot.called("CloseInventory") {
+		t.Errorf("calls = %v, want CloseInventory", bot.calls)
+	}
+}
+
 // --- read-only endpoints ---
 
 func TestBlockRequiresCoordinates(t *testing.T) {

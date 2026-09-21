@@ -39,6 +39,8 @@ func (s *Server) routes() *http.ServeMux {
 	mux.Handle("POST /walk", handle(s, s.walk))
 	mux.Handle("POST /fall", handle(s, s.fall))
 	mux.Handle("POST /slot", handle(s, s.slot))
+	mux.Handle("POST /inventory/click", handle(s, s.inventoryClick))
+	mux.Handle("POST /inventory/close", handle(s, s.inventoryClose))
 	mux.Handle("POST /hold", handle(s, s.hold))
 	mux.Handle("POST /drop", handle(s, s.drop))
 	mux.Handle("POST /sneak", handle(s, s.sneak))
@@ -430,6 +432,28 @@ func (s *Server) slot(_ context.Context, in struct {
 	Slot int `json:"slot" openapi:"required,min=0,max=8"`
 }) (body, error) {
 	return nil, s.bot.SetHeldSlot(in.Slot)
+}
+
+// inventoryClick left-clicks a slot in the player's own inventory window.
+//
+// This is distinct from /container/click: window 0 is always present and also
+// carries the 2x2 crafting grid, which servers can turn into clickable menus.
+func (s *Server) inventoryClick(_ context.Context, in struct {
+	Slot *int `json:"slot" openapi:"required,min=0,max=45"`
+}) (body, error) {
+	if in.Slot == nil {
+		return nil, invalidf("inventory click: slot is required")
+	}
+	if *in.Slot < understudy.SlotCraftOutput || *in.Slot > understudy.SlotOffhand {
+		return nil, invalidf("inventory click: slot %d is outside %d-%d",
+			*in.Slot, understudy.SlotCraftOutput, understudy.SlotOffhand)
+	}
+	return body{"slot": *in.Slot}, s.bot.ClickInventorySlot(*in.Slot)
+}
+
+// inventoryClose closes the player's own inventory window.
+func (s *Server) inventoryClose(_ context.Context, _ struct{}) (body, error) {
+	return nil, s.bot.CloseInventory()
 }
 
 // hold puts a named item into the bot's hand, from anywhere in the inventory.
