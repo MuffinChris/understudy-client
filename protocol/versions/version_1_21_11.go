@@ -18,6 +18,12 @@ func v1_21_11() *protocol.Version {
 			NBTHeightmaps: false,
 		},
 		Packets: protocol.PacketIDs{
+			SBConfigResourcePack:        6,
+			CBConfigResourcePackPush:    9,
+			CBConfigResourcePackPop:     8,
+			SBPlayResourcePack:          48,
+			CBPlayResourcePackPush:      79,
+			CBPlayResourcePackPop:       78,
 			SBHandshake:                 0,
 			SBLoginStart:                0,
 			SBLoginAcknowledged:         3,

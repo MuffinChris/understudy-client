@@ -28,6 +28,13 @@ Because it is a real connection, everything the server does in response is
 real: statistics accrue, advancements fire, plugins see the events they would
 see from a person.
 
+## Rift fork resource-pack testing
+
+This fork adds opt-in `-headless-resource-packs`: download and validate Java
+server packs, then simulate successful application so automated tests can pass
+required-pack admission. It does not render or verify visual assets. See
+[resource-pack testing](docs/resource-packs.md) for limits and usage.
+
 ## Supported versions
 
 **Minecraft 1.21.11 and newer**, on Paper, Fabric and vanilla. One binary
