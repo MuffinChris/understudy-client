@@ -600,7 +600,7 @@ func TestActionResponsesCarryPosition(t *testing.T) {
 // `--control 8080` and `--control 127.0.0.1:8080` must both work.
 func TestParseAddr(t *testing.T) {
 	for _, tc := range []struct{ in, want string }{
-		{"8080", ":8080"},
+		{"8080", "127.0.0.1:8080"},
 		{"127.0.0.1:8080", "127.0.0.1:8080"},
 		{":9000", ":9000"},
 		{"localhost:1", "localhost:1"},
