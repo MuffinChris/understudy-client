@@ -10,6 +10,7 @@ import (
 	"flag"
 	"fmt"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"runtime/debug"
@@ -88,7 +89,7 @@ func parseFlags(args []string, out *os.File) (config, error) {
 		"Minecraft version to speak (default: auto-detect by pinging the server)")
 	fs.BoolVar(&cfg.listVersions, "versions", false, "list supported versions and exit")
 	fs.StringVar(&cfg.control, "control", "",
-		"serve the remote-control HTTP API on this port or host:port (e.g. 8080). "+
+		"serve the remote-control HTTP API (bare port binds to 127.0.0.1). "+
 			"There is no authentication; bind to loopback unless the network is trusted")
 	fs.BoolVar(&cfg.noRespawn, "no-respawn", false,
 		"stay dead instead of respawning (for observing death handling)")
@@ -143,6 +144,15 @@ func run(args []string, stderr *os.File) error {
 		return fmt.Errorf("configuration error: %w", err)
 	}
 
+	var controlListener net.Listener
+	if cfg.control != "" {
+		controlListener, err = net.Listen("tcp", control.ParseAddr(cfg.control))
+		if err != nil {
+			return fmt.Errorf("control api: %w", err)
+		}
+		defer func() { _ = controlListener.Close() }()
+	}
+
 	// Ctrl-C and SIGTERM should disconnect cleanly rather than leave the
 	// server holding a half-open player slot.
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -165,19 +175,31 @@ func run(args []string, stderr *os.File) error {
 		defer cancel()
 	}
 
-	if cfg.control != "" {
-		// The control API writes packets while Run reads them. That is safe:
-		// the connection serialises writes internally.
+	var controlDone chan error
+	stopControl := func() {}
+	if controlListener != nil {
+		controlCtx, cancel := context.WithCancel(runCtx)
+		stopControl = cancel
+		controlDone = make(chan error, 1)
 		go func() {
-			if err := control.New(bot, log).Serve(runCtx, control.ParseAddr(cfg.control)); err != nil {
-				log.Error("control api stopped", "err", err)
+			err := control.New(bot, log).ServeListener(controlCtx, controlListener)
+			if err != nil {
+				_ = bot.Close()
 			}
+			controlDone <- err
 		}()
 	}
+	defer stopControl()
 
 	// Run only ever returns because something ended the session, so its error
 	// is always non-nil — the question is whether that something was us.
 	runErr := bot.Run(runCtx)
+	stopControl()
+	if controlDone != nil {
+		if err := <-controlDone; err != nil {
+			return err
+		}
+	}
 
 	// A cancelled context is the success path when --hold expires: the bot
 	// stayed connected for the whole window without being kicked.

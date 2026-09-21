@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net"
 	"os"
 	"strings"
 	"testing"
@@ -154,5 +155,27 @@ func TestVersionPrefersTheStampAndFallsBackToTheModule(t *testing.T) {
 	}
 	if got == "(devel)" {
 		t.Errorf("version() = %q, which is Go's placeholder rather than an answer", got)
+	}
+}
+
+// A requested control endpoint must be usable before the bot joins a server.
+func TestRunRejectsBusyControlPortBeforeConnecting(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer listener.Close()
+	done := make(chan error, 1)
+	out := devNull(t)
+	go func() {
+		done <- run([]string{"-addr", "127.0.0.1:1", "-version", "26.1", "-control", listener.Addr().String()}, out)
+	}()
+	select {
+	case err := <-done:
+		if err == nil || !strings.Contains(err.Error(), "control api:") {
+			t.Fatalf("got %v; want control bind failure before Minecraft dial", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("busy control port did not fail promptly")
 	}
 }

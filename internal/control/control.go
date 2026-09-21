@@ -18,6 +18,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"strconv"
 	"time"
@@ -60,8 +61,19 @@ func (s *Server) Handler() http.Handler { return s.routes() }
 
 // Serve runs the control API until ctx is cancelled.
 func (s *Server) Serve(ctx context.Context, addr string) error {
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("control api: listen %s: %w", addr, err)
+	}
+	return s.ServeListener(ctx, listener)
+}
+
+// ServeListener takes ownership of a bound listener. Callers can bind before
+// connecting a bot so a busy control port fails without joining the game.
+func (s *Server) ServeListener(ctx context.Context, listener net.Listener) error {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	srv := &http.Server{
-		Addr:              addr,
 		Handler:           s.routes(),
 		ReadHeaderTimeout: readHeaderTimeout,
 		IdleTimeout:       idleTimeout,
@@ -80,8 +92,9 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 		_ = srv.Shutdown(shutdownCtx)
 	}()
 
-	s.log.Info("control api listening", "addr", addr)
-	err := srv.ListenAndServe()
+	s.log.Info("control api listening", "addr", listener.Addr().String())
+	err := srv.Serve(listener)
+	cancel() // Also release the shutdown goroutine when serving itself fails.
 	<-done
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		return fmt.Errorf("control api: %w", err)
@@ -90,10 +103,11 @@ func (s *Server) Serve(ctx context.Context, addr string) error {
 }
 
 // ParseAddr accepts either a bare port or a full host:port, so `--control 8080`
-// and `--control 127.0.0.1:8080` both work.
+// and `--control 127.0.0.1:8080` both bind to loopback. Explicit host:port
+// addresses are preserved, including wildcard binds.
 func ParseAddr(v string) string {
 	if _, err := strconv.Atoi(v); err == nil {
-		return ":" + v
+		return net.JoinHostPort("127.0.0.1", v)
 	}
 	return v
 }

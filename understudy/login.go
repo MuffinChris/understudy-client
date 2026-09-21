@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/blocktopiaworld/understudy-client/internal/nbt"
 	"github.com/blocktopiaworld/understudy-client/protocol"
 )
 
@@ -198,8 +199,14 @@ func (c *Client) handleConfigPacket(ctx context.Context, p protocol.Packet) (don
 		return true, nil
 
 	case c.v.Packets.CBConfigDisconnect:
-		r := p.Reader()
-		return false, fmt.Errorf("understudy: disconnected during configuration: %s", r.String())
+		n, err := nbt.SkipTag(p.Data)
+		if err != nil {
+			return false, fmt.Errorf("understudy: malformed configuration disconnect: %w", err)
+		}
+		if n != len(p.Data) {
+			return false, errors.New("understudy: trailing configuration disconnect bytes")
+		}
+		return false, fmt.Errorf("understudy: disconnected during configuration: %s", nbt.ReadableText(p.Data))
 	}
 	return false, nil
 }

@@ -100,7 +100,9 @@ Both read better on the site:
 **[the OpenAPI reference](https://blocktopiaworld.github.io/understudy-client/reference/)**,
 the latter generated from the route table.
 
-There is no authentication. Bind it to loopback.
+There is no authentication. A bare control port binds to `127.0.0.1`; explicit
+host:port addresses are preserved. For remote control, use an SSH tunnel or a
+trusted network. An unavailable control port fails before the bot joins Minecraft.
 
 ## Use it as a library
 
