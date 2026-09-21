@@ -218,3 +218,24 @@ func TestMeasuredVersionsKeepTheirEncodings(t *testing.T) {
 		}
 	}
 }
+
+// Independent packet-ID fixtures from minecraft-data f59168c, with 26.2's
+// unchanged grammar verified by reports-to-mcdata.mjs. A test that uses the
+// generated IDs as both input and expectation cannot detect shifted IDs.
+func TestResourcePackPacketIDs(t *testing.T) {
+	for name, want := range map[string][3]int32{
+		"1.21.4": {47, 75, 74}, "1.21.11": {48, 79, 78}, "26.1": {49, 81, 80}, "26.2": {49, 81, 80},
+	} {
+		v, err := protocol.ByName(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		p := v.Packets
+		if got := [3]int32{p.SBPlayResourcePack, p.CBPlayResourcePackPush, p.CBPlayResourcePackPop}; got != want {
+			t.Errorf("%s play=%v want=%v", name, got, want)
+		}
+		if got := [3]int32{p.SBConfigResourcePack, p.CBConfigResourcePackPush, p.CBConfigResourcePackPop}; got != [3]int32{6, 9, 8} {
+			t.Errorf("%s configuration=%v", name, got)
+		}
+	}
+}

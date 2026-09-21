@@ -30,6 +30,10 @@ const (
 
 // Options configures a Client.
 type Options struct {
+	// HeadlessResourcePacks downloads and validates server packs, then simulates
+	// successful application. It does not render assets. Default: decline packs.
+	HeadlessResourcePacks bool
+
 	// Addr is the server's host:port.
 	Addr string
 	// Host and Port are what the handshake advertises. Servers may route on
@@ -127,6 +131,8 @@ type Position struct {
 // Client is a single bot connection. See the package comment for what may be
 // called concurrently.
 type Client struct {
+	packs resourcePacks
+
 	opts     Options
 	log      *slog.Logger
 	conn     *protocol.Conn
@@ -265,6 +271,7 @@ func (c *Client) Close() error {
 	if c.conn != nil {
 		err = c.conn.Close()
 	}
+	c.stopResourcePacks()
 	c.wg.Wait()
 	return err
 }
@@ -300,6 +307,7 @@ func (c *Client) Connect(ctx context.Context) (err error) {
 	defer func() {
 		if err != nil {
 			_ = c.conn.Close()
+			c.stopResourcePacks()
 		}
 	}()
 
@@ -326,6 +334,11 @@ func (c *Client) Run(ctx context.Context) error {
 	if c.State() != protocol.StatePlay {
 		return errors.New("understudy: Run called before entering play state")
 	}
+	defer func() {
+		// Closing the socket also unblocks any in-flight resource-pack status write.
+		_ = c.conn.Close()
+		c.stopResourcePacks()
+	}()
 	for {
 		p, err := c.readPacket(ctx)
 		if err != nil {
@@ -361,6 +374,9 @@ func (c *Client) dispatch(ctx context.Context, p protocol.Packet) (bool, error) 
 // handleSessionPacket decodes the packets that keep the session alive and
 // track the player themselves: joining, being moved, health, death and kicks.
 func (c *Client) handleSessionPacket(ctx context.Context, p protocol.Packet) (bool, error) {
+	if handled, err := c.handleResourcePack(ctx, p, false); handled {
+		return true, err
+	}
 	switch p.ID {
 	case c.v.Packets.CBPlayLogin:
 		r := p.Reader()

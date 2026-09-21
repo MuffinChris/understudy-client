@@ -16,19 +16,13 @@ import path from 'node:path'
 
 const [, , dataDir, version, outPath] = process.argv
 if (!dataDir || !version || !outPath) {
-  console.error('usage: genversion.mjs <minecraft-data-dir> <version> <out.go>')
+  console.error('usage: genversion.mjs <minecraft-data-dir> <version> <out.go> [--packets-only]')
   process.exit(1)
 }
 
 const dir = path.join(dataDir, 'pc', version)
 const read = f => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8'))
 const protocol = read('protocol.json')
-const entities = read('entities.json')
-const blocks = read('blocks.json')
-const items = read('items.json')
-const effects = read('effects.json')
-const versionInfo = read('version.json')
-
 // --- packet IDs ------------------------------------------------------------
 // Go field name -> [state, direction, minecraft-data packet name].
 //
@@ -36,6 +30,12 @@ const versionInfo = read('version.json')
 // neither sends nor decodes it. 26.1 has 141 clientbound play packets and this
 // names two dozen.
 const PACKETS = [
+  ['SBConfigResourcePack', 'configuration', 'toServer', 'resource_pack_receive'],
+  ['CBConfigResourcePackPush', 'configuration', 'toClient', 'add_resource_pack'],
+  ['CBConfigResourcePackPop', 'configuration', 'toClient', 'remove_resource_pack'],
+  ['SBPlayResourcePack', 'play', 'toServer', 'resource_pack_receive'],
+  ['CBPlayResourcePackPush', 'play', 'toClient', 'add_resource_pack'],
+  ['CBPlayResourcePackPop', 'play', 'toClient', 'remove_resource_pack'],
   ['SBHandshake', 'handshaking', 'toServer', 'set_protocol'],
 
   ['SBLoginStart', 'login', 'toServer', 'login_start'],
@@ -165,6 +165,24 @@ if (missing.length) {
   console.error(`genversion: ${version} is missing required packets:\n  ` + missing.join('\n  '))
   process.exit(1)
 }
+
+// Refresh only packet IDs without regenerating unrelated world/item tables.
+// Useful when the new surface uses an already-verified protocol grammar.
+if (process.argv[5] === '--packets-only') {
+  const source = fs.readFileSync(outPath, 'utf8')
+  const fields = packetFields.map(([name, id]) => `\t\t\t${name}: ${id},`).join('\n')
+  const table = /Packets: protocol.PacketIDs\{[\s\S]*?\n\t\t\},/
+  if (!table.test(source)) throw new Error('packet table not found')
+  const updated = source.replace(table, `Packets: protocol.PacketIDs{\n${fields}\n\t\t},`)
+  fs.writeFileSync(outPath, updated)
+  process.exit(0)
+}
+
+const entities = read('entities.json')
+const blocks = read('blocks.json')
+const items = read('items.json')
+const effects = read('effects.json')
+const versionInfo = read('version.json')
 
 // --- chunk format ----------------------------------------------------------
 // The format differences that cannot be expressed as a table. All are

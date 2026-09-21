@@ -142,7 +142,7 @@ func (c *Client) configure(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-		done, err := c.handleConfigPacket(p)
+		done, err := c.handleConfigPacket(ctx, p)
 		if err != nil || done {
 			return err
 		}
@@ -151,7 +151,10 @@ func (c *Client) configure(ctx context.Context) error {
 
 // handleConfigPacket answers one configuration packet, reporting whether
 // configuration is now complete.
-func (c *Client) handleConfigPacket(p protocol.Packet) (done bool, err error) {
+func (c *Client) handleConfigPacket(ctx context.Context, p protocol.Packet) (done bool, err error) {
+	if handled, err := c.handleResourcePack(ctx, p, true); handled {
+		return false, err
+	}
 	switch p.ID {
 	case c.v.Packets.CBConfigPing:
 		r := p.Reader()
@@ -184,6 +187,8 @@ func (c *Client) handleConfigPacket(p protocol.Packet) (done bool, err error) {
 			protocol.NewWriter(c.v.Packets.SBConfigAcceptCodeOfConduct).Bytes())
 
 	case c.v.Packets.CBConfigFinishConfiguration:
+		c.packs.mu.Lock()
+		defer c.packs.mu.Unlock()
 		if err := c.conn.WritePacket(
 			protocol.NewWriter(c.v.Packets.SBConfigFinishConfiguration).Bytes()); err != nil {
 			return false, err

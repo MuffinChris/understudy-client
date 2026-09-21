@@ -61,16 +61,17 @@ func main() {
 
 // config is the parsed command line.
 type config struct {
-	addr         string
-	username     string
-	hold         time.Duration
-	version      string
-	listVersions bool
-	control      string
-	noRespawn    bool
-	noIdlePos    bool
-	trace        bool
-	debug        bool
+	headlessPacks bool
+	addr          string
+	username      string
+	hold          time.Duration
+	version       string
+	listVersions  bool
+	control       string
+	noRespawn     bool
+	noIdlePos     bool
+	trace         bool
+	debug         bool
 }
 
 // parseFlags parses argv into a config. Split from run so the flag set is not
@@ -94,6 +95,8 @@ func parseFlags(args []string, out *os.File) (config, error) {
 	fs.BoolVar(&cfg.noIdlePos, "no-idle-position", false,
 		"stop reporting position while standing still (a real client sends ~20/s)")
 	fs.BoolVar(&cfg.trace, "trace", false, "log every clientbound packet id")
+	fs.BoolVar(&cfg.headlessPacks, "headless-resource-packs", false,
+		"download/validate packs and simulate successful load (no rendering; trusted servers only)")
 	fs.BoolVar(&cfg.debug, "debug", false, "enable debug logging")
 	if err := fs.Parse(args); err != nil {
 		return cfg, err
@@ -120,12 +123,13 @@ func run(args []string, stderr *os.File) error {
 	log := slog.New(slog.NewTextHandler(stderr, &slog.HandlerOptions{Level: level}))
 
 	opts := understudy.Options{
-		Addr:                cfg.addr,
-		Version:             cfg.version,
-		Username:            cfg.username,
-		DisableAutoRespawn:  cfg.noRespawn,
-		DisableIdlePosition: cfg.noIdlePos,
-		Logger:              log,
+		HeadlessResourcePacks: cfg.headlessPacks,
+		Addr:                  cfg.addr,
+		Version:               cfg.version,
+		Username:              cfg.username,
+		DisableAutoRespawn:    cfg.noRespawn,
+		DisableIdlePosition:   cfg.noIdlePos,
+		Logger:                log,
 	}
 	if cfg.trace {
 		opts.OnPacket = func(state protocol.State, p protocol.Packet) {

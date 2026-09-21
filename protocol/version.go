@@ -12,6 +12,13 @@ import (
 // version; since real IDs are non-negative, an absent packet simply never
 // matches a dispatch and never gets sent.
 type PacketIDs struct {
+	SBConfigResourcePack     int32
+	CBConfigResourcePackPush int32
+	CBConfigResourcePackPop  int32
+	SBPlayResourcePack       int32
+	CBPlayResourcePackPush   int32
+	CBPlayResourcePackPop    int32
+
 	SBHandshake int32
 
 	SBLoginStart           int32
