@@ -62,6 +62,8 @@ type Bot interface {
 	HeldItem() (understudy.ItemStack, bool)
 	HeldSlot() int
 	SetHeldSlot(slot int) error
+	ClickInventorySlot(slot int) error
+	CloseInventory() error
 	HoldItem(name string) (understudy.ItemStack, error)
 	DropHeld(ctx context.Context, all bool) error
 	EquipArmour(name string) (understudy.ItemStack, error)

@@ -200,6 +200,15 @@ func (b *stubBot) SetHeldSlot(slot int) error {
 	b.heldSlot = slot
 	return nil
 }
+func (b *stubBot) ClickInventorySlot(slot int) error {
+	b.record("ClickInventorySlot")
+	b.lastButton = int32(slot)
+	return b.err
+}
+func (b *stubBot) CloseInventory() error {
+	b.record("CloseInventory")
+	return b.err
+}
 func (b *stubBot) HoldItem(name string) (understudy.ItemStack, error) {
 	b.record("HoldItem:" + name)
 	if b.err != nil {

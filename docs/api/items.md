@@ -39,6 +39,64 @@ Selects a hotbar slot. The low-level form of `/hold`.
 
 ---
 
+## `POST /inventory/click`
+
+Left-clicks a slot in the player's own inventory window (`0`). This is useful
+for servers that project clickable controls into the 2x2 crafting grid without
+opening a separate container. Use `/container/click` after a server opens a
+chest-style or workstation window.
+
+**Parameters**
+
+| name | type | required | meaning |
+| --- | --- | --- | --- |
+| `slot` | int | yes | player-window slot, 0–45 |
+
+```json
+{
+  "slot": 1
+}
+```
+
+```json
+{
+  "ok": true,
+  "pitch": 0,
+  "slot": 1,
+  "x": 48.5,
+  "y": 84,
+  "yaw": 0,
+  "z": 32.5
+}
+```
+
+The call reports the packet was sent. Query `/container` when the click should
+open another window, or `/inventory` when it should change window `0`.
+
+---
+
+## `POST /inventory/close`
+
+Closes the player's own inventory window. This lets a server observe the
+window-`0` close lifecycle after a test has clicked a crafting-grid projection.
+It refuses while a separate container is open; use `/container/close` there so
+the packet carries that container's real window ID.
+
+The request body is empty.
+
+```json
+{
+  "ok": true,
+  "pitch": 0,
+  "x": 48.5,
+  "y": 84,
+  "yaw": 0,
+  "z": 32.5
+}
+```
+
+---
+
 ## `POST /hold`
 
 Finds an item anywhere in the inventory, moves it to the hotbar if it is not
