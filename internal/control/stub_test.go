@@ -221,6 +221,10 @@ func (b *stubBot) DropHeld(ctx context.Context, all bool) error {
 	b.dropAll = all
 	return b.err
 }
+func (b *stubBot) SwapOffhand(ctx context.Context) error {
+	b.record("SwapOffhand")
+	return b.err
+}
 func (b *stubBot) EquipArmour(name string) (understudy.ItemStack, error) {
 	b.record("EquipArmour:" + name)
 	if b.err != nil {

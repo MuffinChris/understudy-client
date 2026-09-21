@@ -10,6 +10,29 @@ Every response below was captured from a live 26.2 server.
 
 ---
 
+## `POST /offhand`
+
+Presses the vanilla swap-hands key once. This is the same input a player sends
+with F by default. A server may intercept it for a feature such as a combat
+palette instead of moving the held items.
+
+The request body is empty. A successful response confirms that the packet was
+sent; query `/inventory` or the feature's observable result to prove what the
+server did with it.
+
+```json
+{
+  "ok": true,
+  "pitch": 0,
+  "x": 48.5,
+  "y": 84,
+  "yaw": 0,
+  "z": 32.5
+}
+```
+
+---
+
 ## `POST /slot`
 
 Selects a hotbar slot. The low-level form of `/hold`.

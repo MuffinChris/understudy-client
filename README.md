@@ -90,7 +90,7 @@ curl -X POST localhost:8181/dig  -d '{"X":10,"Y":64,"Z":10,"hold_ms":1500}'
 ```
 
 Reading, movement, digging, placing, combat, containers and workstations are
-all covered — 55 endpoints, each documented with its parameters and a request
+all covered — 56 endpoints, each documented with its parameters and a request
 and response captured from a live server.
 
 **[Full API reference →](docs/api/)**  ·  **[Runnable examples →](examples/)**

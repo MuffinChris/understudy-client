@@ -505,7 +505,7 @@ func tagOf(path string) string {
 		return "Movement"
 	case "/dig", "/diglook", "/place", "/use":
 		return "Blocks"
-	case "/slot", "/inventory/click", "/inventory/close", "/hold", "/equip", "/drop", "/consume", "/craft":
+	case "/slot", "/inventory/click", "/inventory/close", "/hold", "/equip", "/drop", "/offhand", "/consume", "/craft":
 		return "Items"
 	case "/attack", "/swing", "/shoot", "/interact", "/interactat":
 		return "Combat"

@@ -30,7 +30,7 @@ worked examples are here.
 | [Reading the world](reading.md) | `/state` `/inventory` `/block` `/ground` `/reach` `/lookingat` `/entities` `/recipes` |
 | [Aiming and moving](movement.md) | `/look` `/lookat` `/move` `/walk` `/fall` `/sneak` |
 | [Blocks](blocks.md) | `/dig` `/diglook` `/place` `/use` |
-| [Items](items.md) | `/slot` `/inventory/click` `/inventory/close` `/hold` `/equip` `/drop` `/consume` `/craft` |
+| [Items](items.md) | `/offhand` `/slot` `/inventory/click` `/inventory/close` `/hold` `/equip` `/drop` `/consume` `/craft` |
 | [Combat](combat.md) | `/attack` `/swing` `/shoot` `/interact` `/interactat` |
 | [Containers](containers.md) | `GET /container` `/trades`, `POST /container/*` |
 | [Workstations](workstations.md) | `/smelt` `/anvil` `/rename` `/loom` `/grindstone` `/smith` `/enchant` `/brew` `/cartography` `/beacon` |

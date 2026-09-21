@@ -26,6 +26,9 @@ Notable changes. Dates are when the work landed, not when a tag was cut.
 
 ### Added
 
+- `POST /offhand` presses the vanilla swap-hands key once. Servers can consume
+  the same input for features such as a combat palette, while callers verify
+  the result through inventory or other observed feature state.
 - A refusal says which kind of "no" it is. `409` now carries `reason`, a short
   stable code, and `retryable`, whether the same call unchanged could succeed
   later. A swing sent before the spawn packet arrived clears on its own; an item

@@ -117,12 +117,23 @@ func TestUnknownFieldsAreRejected(t *testing.T) {
 }
 
 func TestVerbsWithNoArgumentsAcceptAnEmptyBody(t *testing.T) {
-	for _, path := range []string{"/swing", "/use", "/drop"} {
+	for _, path := range []string{"/swing", "/use", "/drop", "/offhand"} {
 		t.Run(path, func(t *testing.T) {
 			if code, _ := call(t, newTestServer(newStubBot()), http.MethodPost, path, ""); code != http.StatusOK {
 				t.Errorf("POST %s with no body = %d, want 200", path, code)
 			}
 		})
+	}
+}
+
+func TestOffhandSendsOneSwapAction(t *testing.T) {
+	bot := newStubBot()
+	code, out := call(t, newTestServer(bot), http.MethodPost, "/offhand", "")
+	if code != http.StatusOK {
+		t.Fatalf("POST /offhand = %d, want 200 (%v)", code, out)
+	}
+	if !bot.called("SwapOffhand") {
+		t.Errorf("POST /offhand called %v, want SwapOffhand", bot.calls)
 	}
 }
 
