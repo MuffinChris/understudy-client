@@ -6,6 +6,11 @@ Notable changes. Dates are when the work landed, not when a tag was cut.
 
 ### Fixed
 
+- Server-directed velocity was ignored, so knockback, launch pads and movement
+  skills could be accepted by the server while the bot remained stationary.
+  The client now decodes the version-specific entity-motion packet, applies
+  motion addressed to its own entity for one tick, and reports the resulting
+  position to the server.
 - An item id carrying a block state or a component list matched nothing. A bot
   holding twelve wheat reported none of it when asked for `wheat[age=7]`, and
   refused to hold a water bottle named the only way a command can name one. The

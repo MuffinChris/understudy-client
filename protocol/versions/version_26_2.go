@@ -17,6 +17,7 @@ func v26_2() *protocol.Version {
 			HasSizePrefix: false,
 			NBTHeightmaps: false,
 		},
+		Motion: protocol.EntityMotionLowPrecision,
 		Packets: protocol.PacketIDs{
 			SBConfigResourcePack:        6,
 			CBConfigResourcePackPush:    9,
@@ -79,6 +80,7 @@ func v26_2() *protocol.Version {
 			CBPlayRelEntityMove:         53,
 			CBPlayEntityMoveLook:        54,
 			CBPlayEntityTeleport:        125,
+			CBPlayEntityMotion:          101,
 			CBPlayDeathCombatEvent:      68,
 			CBPlayPosition:              72,
 			CBPlayEntityDestroy:         77,

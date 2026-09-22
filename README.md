@@ -168,7 +168,8 @@ tool is the first thing to check when a mining suite is slow.
 ## Caveats
 
 - **Movement is dead reckoning.** `WalkTo` walks a straight line and knows
-  nothing about walls, drops or water. There is no pathfinding.
+  nothing about walls, drops or water. Server-directed velocity is applied for
+  one tick, without horizontal collision simulation. There is no pathfinding.
 - **Teleports are treated as absolute.** The relative-teleport flags in the
   position packet are ignored.
 - **Offline mode only.** No Mojang authentication and no encryption, so it

@@ -95,6 +95,7 @@ const PACKETS = [
   ['CBPlayRelEntityMove', 'play', 'toClient', 'rel_entity_move'],
   ['CBPlayEntityMoveLook', 'play', 'toClient', 'entity_move_look'],
   ['CBPlayEntityTeleport', 'play', 'toClient', 'entity_teleport'],
+  ['CBPlayEntityMotion', 'play', 'toClient', 'entity_velocity'],
   ['CBPlayDeathCombatEvent', 'play', 'toClient', 'death_combat_event'],
   ['CBPlayPosition', 'play', 'toClient', 'position'],
   ['CBPlayEntityDestroy', 'play', 'toClient', 'entity_destroy'],
@@ -345,6 +346,9 @@ lines.push(`\t\t\tHasFluidCount: ${chunkFormat.hasFluidCount},`)
 lines.push(`\t\t\tHasSizePrefix: ${chunkFormat.hasSizePrefix},`)
 lines.push(`\t\t\tNBTHeightmaps: ${chunkFormat.nbtHeightmaps},`)
 lines.push(`\t\t},`)
+if (versionInfo.version >= 776) {
+  lines.push(`\t\tMotion: protocol.EntityMotionLowPrecision,`)
+}
 lines.push(`\t\tPackets: protocol.PacketIDs{`)
 for (const [field, id] of packetFields) lines.push(`\t\t\t${field}: ${id},`)
 lines.push(`\t\t},`)
