@@ -79,6 +79,7 @@ func v26_1() *protocol.Version {
 			CBPlayRelEntityMove:         53,
 			CBPlayEntityMoveLook:        54,
 			CBPlayEntityTeleport:        125,
+			CBPlayEntityMotion:          101,
 			CBPlayDeathCombatEvent:      68,
 			CBPlayPosition:              72,
 			CBPlayEntityDestroy:         77,

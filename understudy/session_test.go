@@ -217,6 +217,60 @@ func TestTeleportIsAcknowledged(t *testing.T) {
 	}
 }
 
+// Server velocity is an instruction to the client, not an authoritative
+// position update. A real client moves locally and reports where it landed;
+// the server cannot publish that result unless the bot answers the packet.
+func TestSelfEntityMotionReportsMovedPosition(t *testing.T) {
+	c, s := newSession(t)
+	c.entityID = 42
+	c.pos = Position{X: 10, Y: 64, Z: -5}
+	c.onGround = true
+	run(t, c)
+
+	packet := protocol.NewWriter(c.v.Packets.CBPlayEntityMotion).
+		VarInt(42).
+		I16(4000).I16(0).I16(-2000).
+		Bytes()
+	if err := s.conn.WritePacket(packet); err != nil {
+		t.Fatalf("WritePacket: %v", err)
+	}
+	waitFor(t, time.Second, "motion position report", func() bool {
+		return s.countOf(c.v.Packets.SBPlayPositionLook) > 0
+	})
+
+	if pos := c.Position(); pos.X != 10.5 || pos.Y != 64 || pos.Z != -5.25 {
+		t.Errorf("Position() = %+v, want (10.5,64,-5.25)", pos)
+	}
+	reported := s.first(t, c.v.Packets.SBPlayPositionLook, "motion position")
+	r := reported.Reader()
+	if x, y, z := r.F64(), r.F64(), r.F64(); x != 10.5 || y != 64 || z != -5.25 {
+		t.Errorf("reported position = %v,%v,%v, want 10.5,64,-5.25", x, y, z)
+	}
+}
+
+func TestOtherEntityMotionDoesNotMoveTheBot(t *testing.T) {
+	c, s := newSession(t)
+	c.entityID = 42
+	c.pos = Position{X: 10, Y: 64, Z: -5}
+	run(t, c)
+
+	packet := protocol.NewWriter(c.v.Packets.CBPlayEntityMotion).
+		VarInt(41).
+		I16(4000).I16(0).I16(-2000).
+		Bytes()
+	if err := s.conn.WritePacket(packet); err != nil {
+		t.Fatalf("WritePacket: %v", err)
+	}
+	time.Sleep(2 * TickRate)
+
+	if pos := c.Position(); pos.X != 10 || pos.Y != 64 || pos.Z != -5 {
+		t.Errorf("Position() = %+v after another entity's motion", pos)
+	}
+	if got := s.countOf(c.v.Packets.SBPlayPositionLook); got != 0 {
+		t.Errorf("other entity motion produced %d position reports", got)
+	}
+}
+
 // A real client sends a movement packet roughly twenty times a second whether
 // or not the player moved. A bot that only speaks when it has somewhere to be
 // is silent for most of a session, which the server can see.

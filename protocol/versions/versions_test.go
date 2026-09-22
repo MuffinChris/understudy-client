@@ -63,6 +63,7 @@ func TestRequiredPacketsArePresent(t *testing.T) {
 		{"play login", func(v *protocol.Version) int32 { return v.Packets.CBPlayLogin }},
 		{"map_chunk", func(v *protocol.Version) int32 { return v.Packets.CBPlayMapChunk }},
 		{"position (clientbound)", func(v *protocol.Version) int32 { return v.Packets.CBPlayPosition }},
+		{"entity motion", func(v *protocol.Version) int32 { return v.Packets.CBPlayEntityMotion }},
 		{"position_look", func(v *protocol.Version) int32 { return v.Packets.SBPlayPositionLook }},
 		{"block_dig", func(v *protocol.Version) int32 { return v.Packets.SBPlayBlockDig }},
 		{"block_place", func(v *protocol.Version) int32 { return v.Packets.SBPlayBlockPlace }},

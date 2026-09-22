@@ -405,6 +405,9 @@ func (c *Client) handleSessionPacket(ctx context.Context, p protocol.Packet) (bo
 	case c.v.Packets.CBPlayPosition:
 		return true, c.handleTeleport(ctx, p)
 
+	case c.v.Packets.CBPlayEntityMotion:
+		return true, c.handleEntityMotion(ctx, p)
+
 	case c.v.Packets.CBPlayKeepAlive:
 		r := p.Reader()
 		id := r.I64()
@@ -488,6 +491,37 @@ func (c *Client) handleSessionPacket(ctx context.Context, p protocol.Packet) (bo
 		return true, fmt.Errorf("understudy: kicked: %s", nbt.ReadableText(p.Data))
 	}
 	return false, nil
+}
+
+// handleEntityMotion applies the server's velocity to this client for one
+// tick and reports the resulting position. Vanilla performs the same movement
+// locally; ignoring the packet leaves a headless client stationary through
+// knockback, launch pads and movement skills even though the server accepted
+// them.
+func (c *Client) handleEntityMotion(ctx context.Context, p protocol.Packet) error {
+	r := p.Reader()
+	entityID := r.VarInt()
+	dx, dy, dz := protocol.ReadEntityMotion(r, c.v.Motion)
+	if err := r.Err(); err != nil {
+		return err
+	}
+	if left := len(r.Remaining()); left != 0 {
+		return fmt.Errorf("understudy: entity motion packet has %d unread bytes", left)
+	}
+	if !c.isSelf(entityID) {
+		return nil
+	}
+	position := c.Position()
+	err := c.writePosition(
+		position.X+dx,
+		position.Y+dy,
+		position.Z+dz,
+		c.OnGround() && dy == 0,
+	)
+	if err == nil && dy > 0 {
+		c.autoFall(ctx)
+	}
+	return err
 }
 
 // handleTeleport answers a server-issued teleport.

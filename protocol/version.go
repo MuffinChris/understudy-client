@@ -78,6 +78,7 @@ type PacketIDs struct {
 	CBPlayRelEntityMove      int32
 	CBPlayEntityMoveLook     int32
 	CBPlayEntityTeleport     int32
+	CBPlayEntityMotion       int32
 	CBPlayDeathCombatEvent   int32
 	CBPlayPosition           int32
 	CBPlayEntityDestroy      int32
@@ -125,6 +126,15 @@ type ChunkFormat struct {
 	NBTHeightmaps bool
 }
 
+// EntityMotionEncoding identifies the wire shape used for server-directed
+// velocity. Minecraft 26.2 replaced three fixed-point shorts with LpVec3.
+type EntityMotionEncoding uint8
+
+const (
+	EntityMotionLegacy EntityMotionEncoding = iota
+	EntityMotionLowPrecision
+)
+
 // Version is everything this client needs to know that varies between
 // Minecraft versions.
 //
@@ -134,6 +144,7 @@ type Version struct {
 	Name     string
 	Protocol int32
 	Chunk    ChunkFormat
+	Motion   EntityMotionEncoding
 	Packets  PacketIDs
 
 	// componentIDs maps this version's data component wire ids to the canonical
@@ -182,6 +193,7 @@ type VersionSpec struct {
 	Name     string
 	Protocol int32
 	Chunk    ChunkFormat
+	Motion   EntityMotionEncoding
 	Packets  PacketIDs
 
 	// Components describes how this version encodes component payloads. Leave
@@ -232,6 +244,7 @@ func NewVersion(spec VersionSpec) *Version {
 		Name:            spec.Name,
 		Protocol:        spec.Protocol,
 		Chunk:           spec.Chunk,
+		Motion:          spec.Motion,
 		Packets:         spec.Packets,
 		componentIDs:    spec.ComponentIDs,
 		slotDisplayIDs:  spec.SlotDisplayIDs,
