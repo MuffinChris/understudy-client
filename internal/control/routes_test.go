@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -124,7 +125,7 @@ func TestCommandSubmitsPlayerInput(t *testing.T) {
 	}
 }
 
-func TestCommandReportsInvalidInputAndServerRefusals(t *testing.T) {
+func TestCommandReportsInvalidInputAndLocalWriteFailures(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 		body string
@@ -134,7 +135,7 @@ func TestCommandReportsInvalidInputAndServerRefusals(t *testing.T) {
 		{"malformed JSON", `{"command":}`, nil, http.StatusBadRequest},
 		{"wrong field type", `{"command":123}`, nil, http.StatusBadRequest},
 		{"invalid command", `{"command":"/"}`, understudy.ErrInvalidCommand, http.StatusBadRequest},
-		{"action refusal", `{"command":"/skills"}`, errRefused, http.StatusConflict},
+		{"closed socket", `{"command":"/skills"}`, net.ErrClosed, http.StatusConflict},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			bot := newStubBot()
@@ -142,6 +143,9 @@ func TestCommandReportsInvalidInputAndServerRefusals(t *testing.T) {
 			code, out := call(t, newTestServer(bot), http.MethodPost, "/command", tc.body)
 			if code != tc.want || out["error"] == nil {
 				t.Errorf("POST /command = %d %v, want %d with error", code, out, tc.want)
+			}
+			if tc.err == net.ErrClosed && out["error"] != net.ErrClosed.Error() {
+				t.Errorf("POST /command error = %v, want local socket error %q", out["error"], net.ErrClosed)
 			}
 		})
 	}
