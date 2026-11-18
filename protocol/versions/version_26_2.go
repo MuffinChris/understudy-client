@@ -46,6 +46,7 @@ func v26_2() *protocol.Version {
 			CBConfigCodeOfConduct:       19,
 			SBPlayTeleportConfirm:       0,
 			SBPlayAttack:                1,
+			SBPlayChatCommand:           7,
 			SBPlayChatMessage:           9,
 			SBPlayClientCommand:         12,
 			SBPlayUseEntity:             26,

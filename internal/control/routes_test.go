@@ -116,6 +116,37 @@ func TestUnknownFieldsAreRejected(t *testing.T) {
 	}
 }
 
+func TestCommandSubmitsPlayerInput(t *testing.T) {
+	bot := newStubBot()
+	code, out := call(t, newTestServer(bot), http.MethodPost, "/command", `{"command":"/party invite Ally"}`)
+	if code != http.StatusOK || out["ok"] != true || !bot.called("SendCommand:/party invite Ally") {
+		t.Fatalf("POST /command = %d %v, calls %v", code, out, bot.calls)
+	}
+}
+
+func TestCommandReportsInvalidInputAndServerRefusals(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body string
+		err  error
+		want int
+	}{
+		{"malformed JSON", `{"command":}`, nil, http.StatusBadRequest},
+		{"wrong field type", `{"command":123}`, nil, http.StatusBadRequest},
+		{"invalid command", `{"command":"/"}`, understudy.ErrInvalidCommand, http.StatusBadRequest},
+		{"action refusal", `{"command":"/skills"}`, errRefused, http.StatusConflict},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			bot := newStubBot()
+			bot.err = tc.err
+			code, out := call(t, newTestServer(bot), http.MethodPost, "/command", tc.body)
+			if code != tc.want || out["error"] == nil {
+				t.Errorf("POST /command = %d %v, want %d with error", code, out, tc.want)
+			}
+		})
+	}
+}
+
 func TestVerbsWithNoArgumentsAcceptAnEmptyBody(t *testing.T) {
 	for _, path := range []string{"/swing", "/use", "/drop", "/offhand"} {
 		t.Run(path, func(t *testing.T) {

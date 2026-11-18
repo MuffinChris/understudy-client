@@ -42,6 +42,8 @@ tags:
     description: Holding, wearing, eating and dropping.
   - name: Combat
     description: Attacking, shooting and interacting with entities.
+  - name: Player commands
+    description: Unsigned commands sent as the connected player.
   - name: Containers
     description: Windows, and moving things through them.
   - name: Workstations
@@ -370,6 +372,42 @@ paths:
                 map:
                   type: string
                 applied:
+                  type: string
+      responses:
+        "200":
+          description: Done. A POST also carries the envelope.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Envelope" }
+        "400":
+          description: |
+            You asked wrongly — bad JSON, an unknown field, an unparseable
+            coordinate.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "409":
+          description: |
+            You asked correctly and the world said no — out of reach, dead, not
+            in play, nothing to trade. Carries whatever the verb managed first.
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /command:
+    post:
+      operationId: command
+      tags: [Player commands]
+      summary: Submits an unsigned slash command as the connected player.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [command]
+              properties:
+                command:
                   type: string
       responses:
         "200":

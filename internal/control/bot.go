@@ -96,6 +96,7 @@ type Bot interface {
 	NearestEntity(typeName string) (understudy.Entity, error)
 
 	// acting on the world
+	SendCommand(command string) error
 	Swing() error
 	DigBlock(ctx context.Context, x, y, z, face int32, hold time.Duration) error
 	DigBlocks(ctx context.Context, blocks [][3]int32, face int32, hold time.Duration) (int, error)

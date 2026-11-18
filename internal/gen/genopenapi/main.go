@@ -509,6 +509,8 @@ func tagOf(path string) string {
 		return "Items"
 	case "/attack", "/swing", "/shoot", "/interact", "/interactat":
 		return "Combat"
+	case "/command":
+		return "Player commands"
 	}
 	return "Workstations"
 }
@@ -574,6 +576,8 @@ tags:
     description: Holding, wearing, eating and dropping.
   - name: Combat
     description: Attacking, shooting and interacting with entities.
+  - name: Player commands
+    description: Unsigned commands sent as the connected player.
   - name: Containers
     description: Windows, and moving things through them.
   - name: Workstations

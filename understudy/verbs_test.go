@@ -1,6 +1,7 @@
 package understudy
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"strings"
@@ -942,4 +943,62 @@ func TestConsumingWaitsForTheHandRatherThanAClock(t *testing.T) {
 			t.Errorf("gave up after %v, want it to wait out %v first", waited, consumeLimit)
 		}
 	})
+}
+
+// The ID and single String field come from minecraft-data's chat_command
+// schema. ViaVersion uses the same 26.1 serverbound packet table for 26.2.
+func TestSendCommandUsesUnsignedPacket(t *testing.T) {
+	for _, tc := range []struct {
+		version string
+		id      int32
+	}{
+		{"1.21.4", 0x05},
+		{"1.21.11", 0x06},
+		{"26.1", 0x07},
+		{"26.2", 0x07},
+	} {
+		t.Run(tc.version, func(t *testing.T) {
+			c, server := newSession(t)
+			version, err := protocol.ByName(tc.version)
+			if err != nil {
+				t.Fatal(err)
+			}
+			c.v = version
+			for i, fixture := range []struct {
+				input   string
+				payload []byte
+			}{
+				{"/skills", []byte("\x06skills")},
+				{"party invite Ally", []byte("\x11party invite Ally")},
+				{"/probe " + strings.Repeat("a", 126), append([]byte{0x84, 0x01}, []byte("probe "+strings.Repeat("a", 126))...)},
+			} {
+				if err := c.SendCommand(fixture.input); err != nil {
+					t.Fatal(err)
+				}
+				waitFor(t, time.Second, "the unsigned command", func() bool {
+					return len(server.received()) == i+1
+				})
+				packet := server.received()[i]
+				if packet.ID != tc.id || !bytes.Equal(packet.Data, fixture.payload) {
+					t.Errorf("packet = %#x %x, want %#x %x", packet.ID, packet.Data, tc.id, fixture.payload)
+				}
+			}
+		})
+	}
+}
+
+func TestSendCommandRejectsMalformedInput(t *testing.T) {
+	c, _ := newSession(t)
+	for _, input := range []string{
+		"", "/", "//skills", " /skills", "/skills ", "/skills\nparty leave",
+		"/probe \x00", "/probe §c", "/probe a\u2028b", "/probe \xff",
+		"/" + strings.Repeat("a", 257), "/x" + strings.Repeat("👍", 128),
+	} {
+		if err := c.SendCommand(input); !errors.Is(err, ErrInvalidCommand) {
+			t.Errorf("SendCommand(%q) = %v, want ErrInvalidCommand", input, err)
+		}
+	}
+	if err := c.SendCommand("/" + strings.Repeat("👍", 128)); err != nil {
+		t.Errorf("SendCommand rejected a command of exactly 256 UTF-16 units: %v", err)
+	}
 }

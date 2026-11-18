@@ -60,6 +60,7 @@ const PACKETS = [
 
   ['SBPlayTeleportConfirm', 'play', 'toServer', 'teleport_confirm'],
   ['SBPlayAttack', 'play', 'toServer', 'attack'],
+  ['SBPlayChatCommand', 'play', 'toServer', 'chat_command'],
   ['SBPlayChatMessage', 'play', 'toServer', 'chat_message'],
   ['SBPlayClientCommand', 'play', 'toServer', 'client_command'],
   ['SBPlayUseEntity', 'play', 'toServer', 'use_entity'],
