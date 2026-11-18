@@ -4,10 +4,61 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
+	"unicode"
+	"unicode/utf16"
+	"unicode/utf8"
 
 	"github.com/blocktopiaworld/understudy-client/protocol"
 )
+
+// ErrInvalidCommand reports a command that cannot be sent as player input.
+var ErrInvalidCommand = errors.New("understudy: invalid player command")
+
+// SendCommand sends an unsigned command as the connected player. The optional
+// leading slash is a UI convention and is omitted from the packet. The server
+// resolves permissions and arguments, and a successful write confirms delivery
+// only to the connection.
+func (c *Client) SendCommand(command string) error {
+	command = strings.TrimPrefix(command, "/")
+	if err := validateCommand(command); err != nil {
+		return err
+	}
+	if err := c.requireAlive("send command"); err != nil {
+		return err
+	}
+	if err := c.requireConn(); err != nil {
+		return err
+	}
+	id := c.v.Packets.SBPlayChatCommand
+	if id == protocol.Absent {
+		return fmt.Errorf("understudy: %s has no unsigned chat_command packet", c.v.Name)
+	}
+	return c.conn.WritePacket(protocol.NewWriter(id).String(command).Bytes())
+}
+
+func validateCommand(command string) error {
+	if command == "" || strings.HasPrefix(command, "/") || strings.TrimSpace(command) != command {
+		return fmt.Errorf("%w: provide one command, optionally starting with a slash", ErrInvalidCommand)
+	}
+	if !utf8.ValidString(command) {
+		return fmt.Errorf("%w: use valid UTF-8 text", ErrInvalidCommand)
+	}
+	// Bound the input to Minecraft's chat field size, measured in Java UTF-16 units.
+	const maxCommandLength = 256
+	length := 0
+	for _, r := range command {
+		if unicode.IsControl(r) || r == '§' || r == '\u2028' || r == '\u2029' {
+			return fmt.Errorf("%w: use a single line without control or formatting characters", ErrInvalidCommand)
+		}
+		length += utf16.RuneLen(r)
+		if length > maxCommandLength {
+			return fmt.Errorf("%w: limit the command to %d UTF-16 units", ErrInvalidCommand, maxCommandLength)
+		}
+	}
+	return nil
+}
 
 // SetInput sets the player's movement-input bits (sneak, sprint, jump…).
 //

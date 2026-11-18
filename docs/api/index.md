@@ -41,6 +41,16 @@ Every request and response block in these pages was captured from a live
 Minecraft 26.2 server, not written by hand. If a sample looks odd, it is
 because the server really answered that way.
 
+## Player commands
+
+`POST /command` sends one unsigned command as the connected player. For
+example, send `{"command":"/skills"}` to open a server-provided Skills menu.
+The initial slash is optional. Command text must fit within 256 UTF-16 units,
+excluding the slash. Server permissions still apply, and commands that require
+signed arguments can be refused by the server. A successful HTTP response
+confirms that Understudy wrote the packet. Check the resulting server state,
+such as `GET /container` for a menu, to confirm the command took effect.
+
 ## The response envelope
 
 Every `POST` that succeeds returns `200` with where the bot ended up, plus

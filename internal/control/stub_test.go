@@ -304,6 +304,11 @@ func (b *stubBot) InteractNearest(typeName string) (understudy.Entity, error) {
 
 // --- acting ---
 
+func (b *stubBot) SendCommand(command string) error {
+	b.record("SendCommand:" + command)
+	return b.err
+}
+
 func (b *stubBot) Swing() error { b.record("Swing"); return b.err }
 func (b *stubBot) DigBlock(ctx context.Context, x, y, z, face int32, hold time.Duration) error {
 	b.record("DigBlock")

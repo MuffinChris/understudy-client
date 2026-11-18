@@ -67,6 +67,7 @@ func TestRequiredPacketsArePresent(t *testing.T) {
 		{"position_look", func(v *protocol.Version) int32 { return v.Packets.SBPlayPositionLook }},
 		{"block_dig", func(v *protocol.Version) int32 { return v.Packets.SBPlayBlockDig }},
 		{"block_place", func(v *protocol.Version) int32 { return v.Packets.SBPlayBlockPlace }},
+		{"chat_command", func(v *protocol.Version) int32 { return v.Packets.SBPlayChatCommand }},
 		{"window_click", func(v *protocol.Version) int32 { return v.Packets.SBPlayWindowClick }},
 		{"keep_alive", func(v *protocol.Version) int32 { return v.Packets.CBPlayKeepAlive }},
 	}

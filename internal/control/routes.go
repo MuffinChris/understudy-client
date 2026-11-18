@@ -52,6 +52,7 @@ func (s *Server) routes() *http.ServeMux {
 	mux.Handle("POST /shoot", handle(s, s.shoot))
 	mux.Handle("POST /craft", handle(s, s.craft))
 	mux.Handle("POST /swing", handle(s, s.swing))
+	mux.Handle("POST /command", handle(s, s.command))
 	mux.Handle("POST /diglook", handle(s, s.digLookingAt))
 	mux.Handle("POST /attack", handle(s, s.attack))
 	mux.Handle("POST /dig", handle(s, s.dig))
@@ -638,6 +639,17 @@ func (s *Server) craft(ctx context.Context, in struct {
 		return nil, err
 	}
 	return body{"crafted": result.Name, "count": result.Count}, nil
+}
+
+// command submits an unsigned slash command as the connected player.
+func (s *Server) command(_ context.Context, in struct {
+	Command string `json:"command" openapi:"required"`
+}) (body, error) {
+	err := s.bot.SendCommand(in.Command)
+	if errors.Is(err, understudy.ErrInvalidCommand) {
+		return nil, invalidf("%s", err)
+	}
+	return nil, err
 }
 
 func (s *Server) swing(_ context.Context, _ struct{}) (body, error) {

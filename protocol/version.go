@@ -43,6 +43,7 @@ type PacketIDs struct {
 
 	SBPlayTeleportConfirm    int32
 	SBPlayAttack             int32
+	SBPlayChatCommand        int32
 	SBPlayChatMessage        int32
 	SBPlayClientCommand      int32
 	SBPlayUseEntity          int32

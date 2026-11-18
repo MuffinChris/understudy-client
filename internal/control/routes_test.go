@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -113,6 +114,40 @@ func TestUnknownFieldsAreRejected(t *testing.T) {
 		`{"X":1,"Y":2,"Z":3,"hold_msec":900}`)
 	if code != http.StatusBadRequest {
 		t.Errorf("POST /dig with a typo'd field = %d, want 400 (%v)", code, out)
+	}
+}
+
+func TestCommandSubmitsPlayerInput(t *testing.T) {
+	bot := newStubBot()
+	code, out := call(t, newTestServer(bot), http.MethodPost, "/command", `{"command":"/party invite Ally"}`)
+	if code != http.StatusOK || out["ok"] != true || !bot.called("SendCommand:/party invite Ally") {
+		t.Fatalf("POST /command = %d %v, calls %v", code, out, bot.calls)
+	}
+}
+
+func TestCommandReportsInvalidInputAndLocalWriteFailures(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body string
+		err  error
+		want int
+	}{
+		{"malformed JSON", `{"command":}`, nil, http.StatusBadRequest},
+		{"wrong field type", `{"command":123}`, nil, http.StatusBadRequest},
+		{"invalid command", `{"command":"/"}`, understudy.ErrInvalidCommand, http.StatusBadRequest},
+		{"closed socket", `{"command":"/skills"}`, net.ErrClosed, http.StatusConflict},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			bot := newStubBot()
+			bot.err = tc.err
+			code, out := call(t, newTestServer(bot), http.MethodPost, "/command", tc.body)
+			if code != tc.want || out["error"] == nil {
+				t.Errorf("POST /command = %d %v, want %d with error", code, out, tc.want)
+			}
+			if tc.err == net.ErrClosed && out["error"] != net.ErrClosed.Error() {
+				t.Errorf("POST /command error = %v, want local socket error %q", out["error"], net.ErrClosed)
+			}
+		})
 	}
 }
 

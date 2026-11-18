@@ -419,7 +419,14 @@ func renderOperation(b *strings.Builder, r route) {
 	}
 	renderQuery(b, r.query)
 	renderBody(b, r.body, r.anyOf)
-	b.WriteString(responses)
+	success := "Done. A POST also carries the envelope."
+	conflict := `You asked correctly and the world said no — out of reach, dead, not
+            in play, nothing to trade. Carries whatever the verb managed first.`
+	if r.path == "/command" {
+		success = "Understudy wrote the command packet to its connection. Server approval and execution are unconfirmed."
+		conflict = "Understudy could not send the command packet."
+	}
+	fmt.Fprintf(b, responses, success, conflict)
 }
 
 func renderQuery(b *strings.Builder, query []field) {
@@ -509,6 +516,8 @@ func tagOf(path string) string {
 		return "Items"
 	case "/attack", "/swing", "/shoot", "/interact", "/interactat":
 		return "Combat"
+	case "/command":
+		return "Player commands"
 	}
 	return "Workstations"
 }
@@ -574,6 +583,8 @@ tags:
     description: Holding, wearing, eating and dropping.
   - name: Combat
     description: Attacking, shooting and interacting with entities.
+  - name: Player commands
+    description: Unsigned commands sent as the connected player.
   - name: Containers
     description: Windows, and moving things through them.
   - name: Workstations
@@ -633,7 +644,7 @@ components:
 
 const responses = `      responses:
         "200":
-          description: Done. A POST also carries the envelope.
+          description: %s
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Envelope" }
@@ -646,8 +657,7 @@ const responses = `      responses:
               schema: { $ref: "#/components/schemas/Error" }
         "409":
           description: |
-            You asked correctly and the world said no — out of reach, dead, not
-            in play, nothing to trade. Carries whatever the verb managed first.
+            %s
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
